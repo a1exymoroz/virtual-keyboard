@@ -1,0 +1,32 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wrapper__input {
+  width: 50vw;
+  height: 20vh;
+}
+
+.keyboard {
+  display: grid;
+  grid-template-columns: repeat(15, 50px);
+  grid-gap: 5px;
+}
+
+.keyboard__key {
+  grid-column: span 1;
+}
+
+.keyboard__key_two-grid-column {
+  grid-column: span 2;
+}
+
+.keyboard__key_three-grid-column {
+  grid-column: span 3;
+}
+
+.keyboard__key_seven-grid-column {
+  grid-column: span 7;
+}
