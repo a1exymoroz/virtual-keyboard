@@ -12,11 +12,16 @@
 .keyboard {
   display: grid;
   grid-template-columns: repeat(15, 50px);
+  grid-template-rows: repeat(5, 50px);
   grid-gap: 5px;
 }
 
 .keyboard__key {
   grid-column: span 1;
+}
+
+.keyboard__key:active {
+  box-shadow: 2px 2px #999;
 }
 
 .keyboard__key_two-grid-column {
