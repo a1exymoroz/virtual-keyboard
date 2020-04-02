@@ -20,7 +20,8 @@
   grid-column: span 1;
 }
 
-.keyboard__key:active {
+.keyboard__key:active,
+.keyboard__key_active {
   box-shadow: 2px 2px #999;
 }
 

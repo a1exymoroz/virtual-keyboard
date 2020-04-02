@@ -7,6 +7,7 @@ class VirtualKeyboard {
     this.initKeyboardLayout();
 
     this.initKeyBoard();
+    this.initKeyBoardEvents();
   }
 
   initKeyBoard() {
@@ -28,17 +29,18 @@ class VirtualKeyboard {
 
   createKeyboard() {
     const fragment = document.createDocumentFragment();
-    this.keyboardLayout.forEach((key, index) => {
+    this.keyboardLayout.forEach((item, index) => {
       const keyElement = document.createElement('button');
 
       // Add attributes/classes
       keyElement.setAttribute('type', 'button');
       keyElement.dataset.index = `${index}`;
-      keyElement.classList.add(...key.classes);
+      keyElement.dataset.key = `${item.key}`;
+      keyElement.classList.add(...item.classes);
       let text;
-      switch (key.text.eng) {
+      switch (item.key) {
         case 'Backspace': {
-          text = key.text.eng;
+          text = item.text.eng;
           keyElement.textContent = text;
 
           keyElement.addEventListener('click', () => {
@@ -50,15 +52,15 @@ class VirtualKeyboard {
           break;
         }
 
-        case 'Caps Lock': {
-          text = key.text.eng;
+        case 'CapsLock': {
+          text = item.text.eng;
           keyElement.addEventListener('click', () => {
             this.toggleCapsLock();
           });
 
           break;
         }
-        case 'space': {
+        case 'Space': {
           text = ' ';
           keyElement.addEventListener('click', () => {
             this.inputNode.value += text;
@@ -66,16 +68,16 @@ class VirtualKeyboard {
 
           break;
         }
-        case 'ENTER': {
-          text = key.text.eng;
+        case 'Enter': {
+          text = item.text.eng;
           keyElement.addEventListener('click', () => {
             this.inputNode.value += '\n';
           });
 
           break;
         }
-        case 'DEL': {
-          text = key.text.eng;
+        case 'Delete': {
+          text = item.text.eng;
           keyElement.addEventListener('click', () => {
             this.inputNode.value = '';
           });
@@ -83,20 +85,23 @@ class VirtualKeyboard {
           break;
         }
         case 'Tab':
-        case 'Ctrl':
-        case 'Win':
-        case 'Alt':
-        case 'arrow left':
-        case 'arrow down':
-        case 'arrow right':
-        case 'arrow up':
-        case 'Shift': {
-          text = key.text.eng;
+        case 'ControlLeft':
+        case 'ControlRight':
+        case 'MetaLeft':
+        case 'AltLeft':
+        case 'AltRight':
+        case 'ArrowLeft':
+        case 'ArrowDown':
+        case 'ArrowRight':
+        case 'ArrowUp':
+        case 'ShiftRight':
+        case 'ShiftLeft': {
+          text = item.text.eng;
           break;
         }
 
         default: {
-          text = this.capsLock ? key.shift[this.language] : key.text[this.language];
+          text = this.capsLock ? item.shift[this.language] : item.text[this.language];
 
           keyElement.addEventListener('click', (event) => {
             this.inputNode.value += event.currentTarget.textContent;
@@ -119,14 +124,50 @@ class VirtualKeyboard {
 
   rewriteKeyboardText() {
     this.keyboardNode.childNodes.forEach((element) => {
-      const key = this.keyboardLayout[+element.dataset.index];
-      element.textContent = this.capsLock ? key.shift[this.language] : key.text[this.language];
+      const keyboardLayoutItem = this.keyboardLayout[+element.dataset.index];
+      const dataKey = element.dataset.key;
+
+      if (/Digit/.test(dataKey) || dataKey === 'Minus' || dataKey === 'Equal') {
+        element.textContent = keyboardLayoutItem.text.eng;
+      } else {
+        element.textContent = this.capsLock
+          ? keyboardLayoutItem.shift[this.language]
+          : keyboardLayoutItem.text[this.language];
+      }
+    });
+  }
+
+  initKeyBoardEvents() {
+    const keysPressed = {};
+    document.addEventListener('keydown', (event) => {
+      if (!keysPressed[event.code]) {
+        keysPressed[event.code] = this.keyboardNode.querySelector(`[data-key=${event.code}]`);
+        keysPressed[event.code].classList.add('keyboard__key_active');
+        keysPressed[event.code].click();
+      }
+    });
+
+    document.addEventListener('keyup', (event) => {
+      const node = keysPressed[event.code];
+      node.classList.remove('keyboard__key_active');
+
+      if (keysPressed['ShiftLeft'] && keysPressed['AltLeft']) {
+        this.toggleCapsLock();
+      }
+
+      // if (keysPressed['Shift'] && event.key !== 'Shift') {
+      //   const key = this.keyboardLayout[+node.dataset.index];
+      //   const text = !this.capsLock ? key.shift[this.language] : key.text[this.language];
+      //   this.inputNode.value += text;
+      // }
+      delete keysPressed[event.code];
     });
   }
 
   initKeyboardLayout() {
     this.keyboardLayout = [
       {
+        key: 'Backquote',
         classes: ['keyboard__key'],
         text: {
           eng: '`',
@@ -138,6 +179,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit1',
         classes: ['keyboard__key'],
         text: {
           eng: '1',
@@ -149,6 +191,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit2',
         classes: ['keyboard__key'],
         text: {
           eng: '2',
@@ -160,6 +203,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit3',
         classes: ['keyboard__key'],
         text: {
           eng: '3',
@@ -171,6 +215,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit4',
         classes: ['keyboard__key'],
         text: {
           eng: '4',
@@ -182,6 +227,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit5',
         classes: ['keyboard__key'],
         text: {
           eng: '5',
@@ -193,6 +239,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit6',
         classes: ['keyboard__key'],
         text: {
           eng: '6',
@@ -204,6 +251,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit7',
         classes: ['keyboard__key'],
         text: {
           eng: '7',
@@ -215,6 +263,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit8',
         classes: ['keyboard__key'],
         text: {
           eng: '8',
@@ -226,6 +275,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit9',
         classes: ['keyboard__key'],
         text: {
           eng: '9',
@@ -237,6 +287,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit0',
         classes: ['keyboard__key'],
         text: {
           eng: '0',
@@ -248,6 +299,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Minus',
         classes: ['keyboard__key'],
         text: {
           eng: '-',
@@ -259,6 +311,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Equal',
         classes: ['keyboard__key'],
         text: {
           eng: '=',
@@ -270,6 +323,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Backspace',
         classes: ['keyboard__key', 'keyboard__key_two-grid-column'],
         text: {
           eng: 'Backspace',
@@ -281,6 +335,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Tab',
         classes: ['keyboard__key'],
         text: {
           eng: 'Tab',
@@ -292,6 +347,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyQ',
         classes: ['keyboard__key'],
         text: {
           eng: 'q',
@@ -303,6 +359,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyW',
         classes: ['keyboard__key'],
         text: {
           eng: 'w',
@@ -314,6 +371,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyE',
         classes: ['keyboard__key'],
         text: {
           eng: 'e',
@@ -326,6 +384,7 @@ class VirtualKeyboard {
       },
 
       {
+        key: 'KeyR',
         classes: ['keyboard__key'],
         text: {
           eng: 'r',
@@ -337,6 +396,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyT',
         classes: ['keyboard__key'],
         text: {
           eng: 't',
@@ -348,6 +408,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyY',
         classes: ['keyboard__key'],
         text: {
           eng: 'y',
@@ -359,6 +420,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyU',
         classes: ['keyboard__key'],
         text: {
           eng: 'u',
@@ -370,6 +432,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyI',
         classes: ['keyboard__key'],
         text: {
           eng: 'i',
@@ -381,6 +444,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyO',
         classes: ['keyboard__key'],
         text: {
           eng: 'o',
@@ -392,6 +456,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyP',
         classes: ['keyboard__key'],
         text: {
           eng: 'p',
@@ -403,6 +468,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'BracketLeft',
         classes: ['keyboard__key'],
         text: {
           eng: '[',
@@ -414,6 +480,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'BracketRight',
         classes: ['keyboard__key'],
         text: {
           eng: ']',
@@ -425,6 +492,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Backslash',
         classes: ['keyboard__key'],
         text: {
           eng: '\\',
@@ -436,6 +504,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Delete',
         classes: ['keyboard__key'],
         text: {
           eng: 'DEL',
@@ -447,6 +516,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'CapsLock',
         classes: ['keyboard__key', 'keyboard__key_two-grid-column'],
         text: {
           eng: 'Caps Lock',
@@ -458,6 +528,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyA',
         classes: ['keyboard__key'],
         text: {
           eng: 'a',
@@ -469,6 +540,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyS',
         classes: ['keyboard__key'],
         text: {
           eng: 's',
@@ -480,6 +552,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyD',
         classes: ['keyboard__key'],
         text: {
           eng: 'd',
@@ -491,6 +564,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyF',
         classes: ['keyboard__key'],
         text: {
           eng: 'f',
@@ -502,6 +576,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyG',
         classes: ['keyboard__key'],
         text: {
           eng: 'g',
@@ -513,6 +588,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyH',
         classes: ['keyboard__key'],
         text: {
           eng: 'h',
@@ -524,6 +600,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyJ',
         classes: ['keyboard__key'],
         text: {
           eng: 'j',
@@ -535,6 +612,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyK',
         classes: ['keyboard__key'],
         text: {
           eng: 'k',
@@ -546,6 +624,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyL',
         classes: ['keyboard__key'],
         text: {
           eng: 'l',
@@ -557,6 +636,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Semicolon',
         classes: ['keyboard__key'],
         text: {
           eng: ';',
@@ -568,6 +648,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Quote',
         classes: ['keyboard__key'],
         text: {
           eng: "'",
@@ -579,6 +660,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Enter',
         classes: ['keyboard__key', 'keyboard__key_two-grid-column'],
         text: {
           eng: 'ENTER',
@@ -590,6 +672,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'ShiftLeft',
         classes: ['keyboard__key', 'keyboard__key_three-grid-column'],
         text: {
           eng: 'Shift',
@@ -601,6 +684,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyZ',
         classes: ['keyboard__key'],
         text: {
           eng: 'z',
@@ -612,6 +696,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyX',
         classes: ['keyboard__key'],
         text: {
           eng: 'x',
@@ -623,6 +708,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyC',
         classes: ['keyboard__key'],
         text: {
           eng: 'c',
@@ -634,6 +720,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyV',
         classes: ['keyboard__key'],
         text: {
           eng: 'v',
@@ -645,6 +732,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyB',
         classes: ['keyboard__key'],
         text: {
           eng: 'b',
@@ -656,6 +744,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyN',
         classes: ['keyboard__key'],
         text: {
           eng: 'n',
@@ -667,6 +756,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyM',
         classes: ['keyboard__key'],
         text: {
           eng: 'm',
@@ -678,6 +768,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Comma',
         classes: ['keyboard__key'],
         text: {
           eng: ',',
@@ -689,6 +780,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Period',
         classes: ['keyboard__key'],
         text: {
           eng: '.',
@@ -700,6 +792,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Slash',
         classes: ['keyboard__key'],
         text: {
           eng: '/',
@@ -711,6 +804,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'ArrowUp',
         classes: ['keyboard__key'],
         text: {
           eng: 'arrow up',
@@ -722,6 +816,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'ShiftRight',
         classes: ['keyboard__key'],
         text: {
           eng: 'Shift',
@@ -733,6 +828,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'ControlLeft',
         classes: ['keyboard__key'],
         text: {
           eng: 'Ctrl',
@@ -744,6 +840,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'MetaLeft',
         classes: ['keyboard__key'],
         text: {
           eng: 'Win',
@@ -755,6 +852,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'AltLeft',
         classes: ['keyboard__key'],
         text: {
           eng: 'Alt',
@@ -766,17 +864,19 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Space',
         classes: ['keyboard__key', 'keyboard__key_seven-grid-column'],
         text: {
-          eng: 'space',
-          ru: 'space',
+          eng: '',
+          ru: '',
         },
         shift: {
-          eng: 'space',
-          ru: 'space',
+          eng: '',
+          ru: '',
         },
       },
       {
+        key: 'AltRight',
         classes: ['keyboard__key'],
         text: {
           eng: 'Alt',
@@ -788,6 +888,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'ControlRight',
         classes: ['keyboard__key'],
         text: {
           eng: 'Ctrl',
@@ -799,6 +900,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'ArrowLeft',
         classes: ['keyboard__key'],
         text: {
           eng: 'arrow left',
@@ -810,6 +912,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'ArrowDown',
         classes: ['keyboard__key'],
         text: {
           eng: 'arrow down',
@@ -821,6 +924,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'ArrowRight',
         classes: ['keyboard__key'],
         text: {
           eng: 'arrow right',
