@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "lint": "eslint --debug src/",
-    "lint:write": "eslint --debug src/ --fix",
-    "prettier": "prettier --write src/**/*.js"
+    "lint:write": "eslint --debug index.js --fix",
+    "prettier": "prettier --write index.js"
   },
   "husky": {
     "hooks": {
