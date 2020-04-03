@@ -19,11 +19,18 @@
 
 .keyboard__key {
   grid-column: span 1;
+
+  -webkit-transition: background-color 1s ease-out;
+  -moz-transition: background-color 1s ease-out;
+  -o-transition: background-color 1s ease-out;
+  transition: background-color 1s ease-out;
+  background-color: white;
+  cursor: pointer;
 }
 
 .keyboard__key:active,
 .keyboard__key_active {
-  box-shadow: 2px 2px #999;
+  background-color: red;
 }
 
 .keyboard__key_two-grid-column {

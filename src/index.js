@@ -8,6 +8,8 @@ class VirtualKeyboard {
     this.keyboardNode = null;
     this.isInputFocus = false;
 
+    const localStorageLanguage = JSON.parse(localStorage.getItem('lang'));
+    this.language = localStorageLanguage || 'eng';
     this.initKeyboardLayout();
     this.initKeyBoard();
     this.initKeyBoardEvents();
@@ -69,7 +71,7 @@ class VirtualKeyboard {
           break;
         }
         case 'Space': {
-          text = ' ';
+          text = item.text.eng;
           keyElement.addEventListener('click', () => {
             this.inputNode.value += text;
           });
@@ -87,21 +89,36 @@ class VirtualKeyboard {
         case 'Delete': {
           text = item.text.eng;
           keyElement.addEventListener('click', () => {
-            this.inputNode.value = '';
+            const selection = this.inputNode.selectionStart;
+            this.inputNode.value = this.inputNode.value.substring(selection, selection + 1);
           });
 
           break;
         }
-        case 'Tab':
+        case 'ArrowLeft':
+        case 'ArrowDown':
+        case 'ArrowRight':
+        case 'ArrowUp': {
+          text = item.text.eng;
+          keyElement.addEventListener('click', () => {
+            this.inputNode.selectionStart = this.inputNode.value.length;
+            this.inputNode.selectionEnd = this.inputNode.value.length;
+            this.inputNode.focus();
+          });
+          break;
+        }
+        case 'Tab': {
+          text = item.text.eng;
+          keyElement.addEventListener('click', () => {
+            this.inputNode.value += '    ';
+          });
+          break;
+        }
         case 'ControlLeft':
         case 'ControlRight':
         case 'MetaLeft':
         case 'AltLeft':
         case 'AltRight':
-        case 'ArrowLeft':
-        case 'ArrowDown':
-        case 'ArrowRight':
-        case 'ArrowUp':
         case 'ShiftRight':
         case 'ShiftLeft': {
           text = item.text.eng;
@@ -174,7 +191,9 @@ class VirtualKeyboard {
   }
 
   toggleLanguage() {
-    this.language = this.language === 'eng' ? 'ru' : 'eng';
+    const language = this.language === 'eng' ? 'ru' : 'eng';
+    localStorage.setItem('lang', JSON.stringify(language));
+    this.language = language;
     this.rewriteKeyboardContentText();
   }
 
@@ -889,12 +908,12 @@ class VirtualKeyboard {
         key: 'Space',
         classes: ['keyboard__key', 'keyboard__key_seven-grid-column'],
         text: {
-          eng: '',
-          ru: '',
+          eng: ' ',
+          ru: ' ',
         },
         shift: {
-          eng: '',
-          ru: '',
+          eng: ' ',
+          ru: ' ',
         },
       },
       {
