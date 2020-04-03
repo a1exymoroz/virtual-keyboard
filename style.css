@@ -7,16 +7,30 @@
 .wrapper__input {
   width: 50vw;
   height: 20vh;
+  font-size: 20px;
 }
 
 .keyboard {
   display: grid;
   grid-template-columns: repeat(15, 50px);
+  grid-template-rows: repeat(5, 50px);
   grid-gap: 5px;
 }
 
 .keyboard__key {
   grid-column: span 1;
+
+  -webkit-transition: background-color 1s ease-out;
+  -moz-transition: background-color 1s ease-out;
+  -o-transition: background-color 1s ease-out;
+  transition: background-color 1s ease-out;
+  background-color: white;
+  cursor: pointer;
+}
+
+.keyboard__key:active,
+.keyboard__key_active {
+  background-color: red;
 }
 
 .keyboard__key_two-grid-column {

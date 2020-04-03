@@ -3,20 +3,30 @@ class VirtualKeyboard {
     this.rootNode = rootNode;
     this.language = 'eng';
     this.capsLock = false;
+    this.keysPressed = {};
+    this.inputNode = null;
+    this.keyboardNode = null;
+    this.isInputFocus = false;
 
+    const localStorageLanguage = JSON.parse(localStorage.getItem('lang'));
+    this.language = localStorageLanguage || 'eng';
     this.initKeyboardLayout();
-
-    this.init();
+    this.initKeyBoard();
+    this.initKeyBoardEvents();
   }
 
-  init() {
-    // Create main elements
+  initKeyBoard() {
     const wrapper = document.createElement('div');
     wrapper.classList.add('wrapper');
 
-    this.inputNode = document.createElement('input');
+    this.inputNode = document.createElement('textarea');
+    this.inputNode.addEventListener('focus', () => {
+      this.isInputFocus = true;
+    });
+    this.inputNode.addEventListener('blur', () => {
+      this.isInputFocus = false;
+    });
     this.inputNode.classList.add('wrapper__input');
-    this.inputNode.setAttribute('type', 'textarea');
     wrapper.append(this.inputNode);
 
     this.keyboardNode = document.createElement('div');
@@ -25,43 +35,22 @@ class VirtualKeyboard {
     wrapper.append(this.keyboardNode);
 
     this.rootNode.append(wrapper);
-
-    // Setup main elements
-    // this.elements.main.classList.add('keyboard', 'keyboard--hidden');
-    // this.elements.keysContainer.classList.add('keyboard__keys');
-    // this.elements.keysContainer.appendChild(this.createKeyboard());
-
-    // this.elements.keys = this.elements.keysContainer.querySelectorAll('.keyboard__key');
-
-    // Add to DOM
-    // this.elements.main.appendChild(this.elements.keysContainer);
-    // this.rootNode.append(this.elements.main);
-
-    // Automatically use keyboard for elements with .use-keyboard-input
-    // document.querySelectorAll('.use-keyboard-input').forEach((element) => {
-    //   element.addEventListener('focus', () => {
-    //     this.open(element.value, (currentValue) => {
-    //       element.value = currentValue;
-    //     });
-    //   });
-    // });
   }
 
   createKeyboard() {
     const fragment = document.createDocumentFragment();
-
-    // const keyboardLayout = getKeyboardLayout();
-    this.keyboardLayout.forEach((key) => {
+    this.keyboardLayout.forEach((item, index) => {
       const keyElement = document.createElement('button');
-      // const insertLineBreak = ['backspace', 'p', 'enter', '?'].indexOf(key) !== -1;
 
       // Add attributes/classes
       keyElement.setAttribute('type', 'button');
-      keyElement.classList.add(...key.classes);
-
-      switch (key.text.eng) {
+      keyElement.dataset.index = `${index}`;
+      keyElement.dataset.key = `${item.key}`;
+      keyElement.classList.add(...item.classes);
+      let text;
+      switch (item.key) {
         case 'Backspace': {
-          const text = key.text.eng;
+          text = item.text.eng;
           keyElement.textContent = text;
 
           keyElement.addEventListener('click', () => {
@@ -73,105 +62,165 @@ class VirtualKeyboard {
           break;
         }
 
-        case 'Caps Lock': {
+        case 'CapsLock': {
+          text = item.text.eng;
           keyElement.addEventListener('click', () => {
             this.toggleCapsLock();
           });
 
           break;
         }
-
-        // case 'enter':
-        //   keyElement.classList.add('keyboard__key--wide');
-        //   // keyElement.innerHTML = createIconHTML('keyboard_return');
-
-        //   keyElement.addEventListener('click', () => {
-        //     this.properties.value += '\n';
-        //     // this.triggerEvent('oninput');
-        //   });
-
-        //   break;
-
-        // case 'space':
-        //   keyElement.classList.add('keyboard__key--extra-wide');
-        //   // keyElement.innerHTML = createIconHTML('space_bar');
-
-        //   keyElement.addEventListener('click', () => {
-        //     this.properties.value += ' ';
-        //     // this.triggerEvent('oninput');
-        //   });
-
-        //   break;
-
-        // case 'done':
-        //   keyElement.classList.add('keyboard__key--wide', 'keyboard__key--dark');
-        //   // keyElement.innerHTML = createIconHTML('check_circle');
-
-        //   keyElement.addEventListener('click', () => {
-        //     // this.close();
-        //     // this.triggerEvent('onclose');
-        //   });
-
-        //   break;
-
-        default: {
-          const text = key.text[this.language];
-          keyElement.textContent = text;
-
+        case 'Space': {
+          text = item.text.eng;
           keyElement.addEventListener('click', () => {
             this.inputNode.value += text;
-            // this.triggerEvent('oninput');
+          });
+
+          break;
+        }
+        case 'Enter': {
+          text = item.text.eng;
+          keyElement.addEventListener('click', () => {
+            this.inputNode.value += '\n';
+          });
+
+          break;
+        }
+        case 'Delete': {
+          text = item.text.eng;
+          keyElement.addEventListener('click', () => {
+            const selection = this.inputNode.selectionStart;
+            this.inputNode.value = this.inputNode.value.substring(selection, selection + 1);
+          });
+
+          break;
+        }
+        case 'ArrowLeft':
+        case 'ArrowDown':
+        case 'ArrowRight':
+        case 'ArrowUp': {
+          text = item.text.eng;
+          keyElement.addEventListener('click', () => {
+            this.inputNode.selectionStart = this.inputNode.value.length;
+            this.inputNode.selectionEnd = this.inputNode.value.length;
+            this.inputNode.focus();
+          });
+          break;
+        }
+        case 'Tab': {
+          text = item.text.eng;
+          keyElement.addEventListener('click', () => {
+            this.inputNode.value += '    ';
+          });
+          break;
+        }
+        case 'ControlLeft':
+        case 'ControlRight':
+        case 'MetaLeft':
+        case 'AltLeft':
+        case 'AltRight':
+        case 'ShiftRight':
+        case 'ShiftLeft': {
+          text = item.text.eng;
+          break;
+        }
+
+        default: {
+          text = this.capsLock ? item.shift[this.language] : item.text[this.language];
+
+          keyElement.addEventListener('click', (event) => {
+            if (this.hasKeyPressed(/Shift/)) {
+              this.inputNode.value += !this.capsLock
+                ? item.shift[this.language]
+                : item.text[this.language];
+            } else {
+              this.inputNode.value += event.currentTarget.textContent;
+            }
           });
 
           break;
         }
       }
-
+      keyElement.textContent = text;
       fragment.appendChild(keyElement);
     });
 
     return fragment;
   }
 
-  // triggerEvent(handlerName) {
-  //   if (typeof this.eventHandlers[handlerName] === 'function') {
-  //     this.eventHandlers[handlerName](this.properties.value);
-  //   }
-  // }
-
   toggleCapsLock() {
     this.capsLock = !this.capsLock;
-
-    // for (const key of this.elements.keys) {
-    //   if (key.childElementCount === 0) {
-    //     key.textContent = this.properties.capsLock
-    //       ? key.textContent.toUpperCase()
-    //       : key.textContent.toLowerCase();
-    //   }
-    // }
+    this.rewriteKeyboardContentText();
   }
 
-  // open(initialValue, oninput, onclose) {
-  //   this.properties.value = initialValue || '';
-  //   this.eventHandlers.oninput = oninput;
-  //   this.eventHandlers.onclose = onclose;
-  //   this.elements.main.classList.remove('keyboard--hidden');
-  // }
+  rewriteKeyboardContentText() {
+    this.keyboardNode.childNodes.forEach((element) => {
+      const keyboardLayoutItem = this.keyboardLayout[+element.dataset.index];
+      const dataKey = element.dataset.key;
+
+      if (/Digit/.test(dataKey) || dataKey === 'Minus' || dataKey === 'Equal') {
+        element.textContent = keyboardLayoutItem.text.eng;
+      } else {
+        element.textContent = this.capsLock
+          ? keyboardLayoutItem.shift[this.language]
+          : keyboardLayoutItem.text[this.language];
+      }
+    });
+  }
+
+  initKeyBoardEvents() {
+    document.addEventListener('keydown', (event) => {
+      if (!this.keysPressed[event.code]) {
+        this.keysPressed[event.code] = this.keyboardNode.querySelector(`[data-key=${event.code}]`);
+        this.keysPressed[event.code].classList.add('keyboard__key_active');
+        if (!this.isInputFocus) {
+          this.keysPressed[event.code].click();
+        }
+      }
+    });
+
+    document.addEventListener('keyup', (event) => {
+      const node = this.keysPressed[event.code];
+      node.classList.remove('keyboard__key_active');
+
+      if (this.hasKeyPressed(/Shift/) && this.hasKeyPressed(/Alt/)) {
+        this.toggleLanguage();
+      }
+      delete this.keysPressed[event.code];
+    });
+  }
+
+  toggleLanguage() {
+    const language = this.language === 'eng' ? 'ru' : 'eng';
+    localStorage.setItem('lang', JSON.stringify(language));
+    this.language = language;
+    this.rewriteKeyboardContentText();
+  }
+
+  hasKeyPressed(regexp) {
+    return Object.keys(this.keysPressed).some((element) => regexp.test(element));
+  }
+
+  keyPressedLength() {
+    return Object.keys(this.keysPressed).length;
+  }
 
   initKeyboardLayout() {
     this.keyboardLayout = [
       {
+        key: 'Backquote',
         classes: ['keyboard__key'],
         text: {
           eng: '`',
           ru: 'ё',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: '~',
+          ru: 'ё'.toUpperCase(),
         },
       },
       {
+        key: 'Digit1',
         classes: ['keyboard__key'],
         text: {
           eng: '1',
@@ -183,6 +232,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit2',
         classes: ['keyboard__key'],
         text: {
           eng: '2',
@@ -194,6 +244,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit3',
         classes: ['keyboard__key'],
         text: {
           eng: '3',
@@ -205,6 +256,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit4',
         classes: ['keyboard__key'],
         text: {
           eng: '4',
@@ -216,6 +268,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit5',
         classes: ['keyboard__key'],
         text: {
           eng: '5',
@@ -227,6 +280,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit6',
         classes: ['keyboard__key'],
         text: {
           eng: '6',
@@ -238,6 +292,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit7',
         classes: ['keyboard__key'],
         text: {
           eng: '7',
@@ -249,6 +304,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit8',
         classes: ['keyboard__key'],
         text: {
           eng: '8',
@@ -260,6 +316,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit9',
         classes: ['keyboard__key'],
         text: {
           eng: '9',
@@ -271,6 +328,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Digit0',
         classes: ['keyboard__key'],
         text: {
           eng: '0',
@@ -282,6 +340,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Minus',
         classes: ['keyboard__key'],
         text: {
           eng: '-',
@@ -293,6 +352,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Equal',
         classes: ['keyboard__key'],
         text: {
           eng: '=',
@@ -304,28 +364,31 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Backspace',
         classes: ['keyboard__key', 'keyboard__key_two-grid-column'],
         text: {
           eng: 'Backspace',
           ru: 'Backspace',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'Backspace',
+          ru: 'Backspace',
         },
       },
       {
+        key: 'Tab',
         classes: ['keyboard__key'],
         text: {
           eng: 'Tab',
           ru: 'Tab',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'Tab',
+          ru: 'Tab',
         },
       },
       {
+        key: 'KeyQ',
         classes: ['keyboard__key'],
         text: {
           eng: 'q',
@@ -337,6 +400,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyW',
         classes: ['keyboard__key'],
         text: {
           eng: 'w',
@@ -348,6 +412,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyE',
         classes: ['keyboard__key'],
         text: {
           eng: 'e',
@@ -360,6 +425,7 @@ class VirtualKeyboard {
       },
 
       {
+        key: 'KeyR',
         classes: ['keyboard__key'],
         text: {
           eng: 'r',
@@ -371,6 +437,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyT',
         classes: ['keyboard__key'],
         text: {
           eng: 't',
@@ -382,6 +449,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyY',
         classes: ['keyboard__key'],
         text: {
           eng: 'y',
@@ -393,6 +461,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyU',
         classes: ['keyboard__key'],
         text: {
           eng: 'u',
@@ -404,6 +473,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyI',
         classes: ['keyboard__key'],
         text: {
           eng: 'i',
@@ -415,6 +485,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyO',
         classes: ['keyboard__key'],
         text: {
           eng: 'o',
@@ -426,6 +497,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyP',
         classes: ['keyboard__key'],
         text: {
           eng: 'p',
@@ -437,6 +509,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'BracketLeft',
         classes: ['keyboard__key'],
         text: {
           eng: '[',
@@ -448,6 +521,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'BracketRight',
         classes: ['keyboard__key'],
         text: {
           eng: ']',
@@ -459,6 +533,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Backslash',
         classes: ['keyboard__key'],
         text: {
           eng: '\\',
@@ -470,28 +545,31 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Delete',
         classes: ['keyboard__key'],
         text: {
           eng: 'DEL',
           ru: 'DEL',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'DEL',
+          ru: 'DEL',
         },
       },
       {
+        key: 'CapsLock',
         classes: ['keyboard__key', 'keyboard__key_two-grid-column'],
         text: {
           eng: 'Caps Lock',
           ru: 'Caps Lock',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'Caps Lock',
+          ru: 'Caps Lock',
         },
       },
       {
+        key: 'KeyA',
         classes: ['keyboard__key'],
         text: {
           eng: 'a',
@@ -503,6 +581,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyS',
         classes: ['keyboard__key'],
         text: {
           eng: 's',
@@ -514,6 +593,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyD',
         classes: ['keyboard__key'],
         text: {
           eng: 'd',
@@ -525,6 +605,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyF',
         classes: ['keyboard__key'],
         text: {
           eng: 'f',
@@ -536,6 +617,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyG',
         classes: ['keyboard__key'],
         text: {
           eng: 'g',
@@ -547,6 +629,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyH',
         classes: ['keyboard__key'],
         text: {
           eng: 'h',
@@ -558,6 +641,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyJ',
         classes: ['keyboard__key'],
         text: {
           eng: 'j',
@@ -569,6 +653,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyK',
         classes: ['keyboard__key'],
         text: {
           eng: 'k',
@@ -580,6 +665,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyL',
         classes: ['keyboard__key'],
         text: {
           eng: 'l',
@@ -591,6 +677,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Semicolon',
         classes: ['keyboard__key'],
         text: {
           eng: ';',
@@ -602,6 +689,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Quote',
         classes: ['keyboard__key'],
         text: {
           eng: "'",
@@ -613,28 +701,31 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Enter',
         classes: ['keyboard__key', 'keyboard__key_two-grid-column'],
         text: {
           eng: 'ENTER',
           ru: 'ENTER',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'ENTER',
+          ru: 'ENTER',
         },
       },
       {
+        key: 'ShiftLeft',
         classes: ['keyboard__key', 'keyboard__key_three-grid-column'],
         text: {
           eng: 'Shift',
           ru: 'Shift',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'Shift',
+          ru: 'Shift',
         },
       },
       {
+        key: 'KeyZ',
         classes: ['keyboard__key'],
         text: {
           eng: 'z',
@@ -646,6 +737,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyX',
         classes: ['keyboard__key'],
         text: {
           eng: 'x',
@@ -657,6 +749,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyC',
         classes: ['keyboard__key'],
         text: {
           eng: 'c',
@@ -668,6 +761,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyV',
         classes: ['keyboard__key'],
         text: {
           eng: 'v',
@@ -679,6 +773,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyB',
         classes: ['keyboard__key'],
         text: {
           eng: 'b',
@@ -690,6 +785,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyN',
         classes: ['keyboard__key'],
         text: {
           eng: 'n',
@@ -701,6 +797,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'KeyM',
         classes: ['keyboard__key'],
         text: {
           eng: 'm',
@@ -712,6 +809,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Comma',
         classes: ['keyboard__key'],
         text: {
           eng: ',',
@@ -723,6 +821,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Period',
         classes: ['keyboard__key'],
         text: {
           eng: '.',
@@ -734,6 +833,7 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'Slash',
         classes: ['keyboard__key'],
         text: {
           eng: '/',
@@ -745,124 +845,135 @@ class VirtualKeyboard {
         },
       },
       {
+        key: 'ArrowUp',
         classes: ['keyboard__key'],
         text: {
           eng: 'arrow up',
           ru: 'arrow up',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'arrow up',
+          ru: 'arrow up',
         },
       },
       {
+        key: 'ShiftRight',
         classes: ['keyboard__key'],
         text: {
           eng: 'Shift',
           ru: 'Shift',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'Shift',
+          ru: 'Shift',
         },
       },
       {
+        key: 'ControlLeft',
         classes: ['keyboard__key'],
         text: {
           eng: 'Ctrl',
           ru: 'Ctrl',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'Ctrl',
+          ru: 'Ctrl',
         },
       },
       {
+        key: 'MetaLeft',
         classes: ['keyboard__key'],
         text: {
           eng: 'Win',
           ru: 'Win',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'Win',
+          ru: 'Win',
         },
       },
       {
+        key: 'AltLeft',
         classes: ['keyboard__key'],
         text: {
           eng: 'Alt',
           ru: 'Alt',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'Alt',
+          ru: 'Alt',
         },
       },
       {
+        key: 'Space',
         classes: ['keyboard__key', 'keyboard__key_seven-grid-column'],
         text: {
-          eng: 'space',
-          ru: 'space',
+          eng: ' ',
+          ru: ' ',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: ' ',
+          ru: ' ',
         },
       },
       {
+        key: 'AltRight',
         classes: ['keyboard__key'],
         text: {
           eng: 'Alt',
           ru: 'Alt',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'Alt',
+          ru: 'Alt',
         },
       },
       {
+        key: 'ControlRight',
         classes: ['keyboard__key'],
         text: {
           eng: 'Ctrl',
           ru: 'Ctrl',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'Ctrl',
+          ru: 'Ctrl',
         },
       },
       {
+        key: 'ArrowLeft',
         classes: ['keyboard__key'],
         text: {
           eng: 'arrow left',
           ru: 'arrow left',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'arrow left',
+          ru: 'arrow left',
         },
       },
       {
+        key: 'ArrowDown',
         classes: ['keyboard__key'],
         text: {
           eng: 'arrow down',
           ru: 'arrow down',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'arrow down',
+          ru: 'arrow down',
         },
       },
       {
+        key: 'ArrowRight',
         classes: ['keyboard__key'],
         text: {
           eng: 'arrow right',
           ru: 'arrow right',
         },
         shift: {
-          eng: null,
-          ru: null,
+          eng: 'arrow right',
+          ru: 'arrow right',
         },
       },
     ];
@@ -871,16 +982,3 @@ class VirtualKeyboard {
 
 const rootNode = document.querySelector('#App');
 new VirtualKeyboard(rootNode);
-// window.addEventListener('DOMContentLoaded', () => {
-//   new VirtualKeyboard();
-// });
-
-//TODO:
-// "husky": {
-//   "hooks": {
-//     "pre-commit": "lint-staged"
-//   }
-// },
-// "lint-staged": {
-//   "*.(js)": ["npm run lint:write", "git add"]
-// },
