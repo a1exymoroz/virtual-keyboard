@@ -3,9 +3,12 @@ class VirtualKeyboard {
     this.rootNode = rootNode;
     this.language = 'eng';
     this.capsLock = false;
+    this.keysPressed = {};
+    this.inputNode = null;
+    this.keyboardNode = null;
+    this.isInputFocus = false;
 
     this.initKeyboardLayout();
-
     this.initKeyBoard();
     this.initKeyBoardEvents();
   }
@@ -14,9 +17,14 @@ class VirtualKeyboard {
     const wrapper = document.createElement('div');
     wrapper.classList.add('wrapper');
 
-    this.inputNode = document.createElement('input');
+    this.inputNode = document.createElement('textarea');
+    this.inputNode.addEventListener('focus', () => {
+      this.isInputFocus = true;
+    });
+    this.inputNode.addEventListener('blur', () => {
+      this.isInputFocus = false;
+    });
     this.inputNode.classList.add('wrapper__input');
-    this.inputNode.setAttribute('type', 'textarea');
     wrapper.append(this.inputNode);
 
     this.keyboardNode = document.createElement('div');
@@ -104,7 +112,13 @@ class VirtualKeyboard {
           text = this.capsLock ? item.shift[this.language] : item.text[this.language];
 
           keyElement.addEventListener('click', (event) => {
-            this.inputNode.value += event.currentTarget.textContent;
+            if (this.hasKeyPressed(/Shift/)) {
+              this.inputNode.value += !this.capsLock
+                ? item.shift[this.language]
+                : item.text[this.language];
+            } else {
+              this.inputNode.value += event.currentTarget.textContent;
+            }
           });
 
           break;
@@ -119,10 +133,10 @@ class VirtualKeyboard {
 
   toggleCapsLock() {
     this.capsLock = !this.capsLock;
-    this.rewriteKeyboardText();
+    this.rewriteKeyboardContentText();
   }
 
-  rewriteKeyboardText() {
+  rewriteKeyboardContentText() {
     this.keyboardNode.childNodes.forEach((element) => {
       const keyboardLayoutItem = this.keyboardLayout[+element.dataset.index];
       const dataKey = element.dataset.key;
@@ -138,30 +152,38 @@ class VirtualKeyboard {
   }
 
   initKeyBoardEvents() {
-    const keysPressed = {};
     document.addEventListener('keydown', (event) => {
-      if (!keysPressed[event.code]) {
-        keysPressed[event.code] = this.keyboardNode.querySelector(`[data-key=${event.code}]`);
-        keysPressed[event.code].classList.add('keyboard__key_active');
-        keysPressed[event.code].click();
+      if (!this.keysPressed[event.code]) {
+        this.keysPressed[event.code] = this.keyboardNode.querySelector(`[data-key=${event.code}]`);
+        this.keysPressed[event.code].classList.add('keyboard__key_active');
+        if (!this.isInputFocus) {
+          this.keysPressed[event.code].click();
+        }
       }
     });
 
     document.addEventListener('keyup', (event) => {
-      const node = keysPressed[event.code];
+      const node = this.keysPressed[event.code];
       node.classList.remove('keyboard__key_active');
 
-      if (keysPressed['ShiftLeft'] && keysPressed['AltLeft']) {
-        this.toggleCapsLock();
+      if (this.hasKeyPressed(/Shift/) && this.hasKeyPressed(/Alt/)) {
+        this.toggleLanguage();
       }
-
-      // if (keysPressed['Shift'] && event.key !== 'Shift') {
-      //   const key = this.keyboardLayout[+node.dataset.index];
-      //   const text = !this.capsLock ? key.shift[this.language] : key.text[this.language];
-      //   this.inputNode.value += text;
-      // }
-      delete keysPressed[event.code];
+      delete this.keysPressed[event.code];
     });
+  }
+
+  toggleLanguage() {
+    this.language = this.language === 'eng' ? 'ru' : 'eng';
+    this.rewriteKeyboardContentText();
+  }
+
+  hasKeyPressed(regexp) {
+    return Object.keys(this.keysPressed).some((element) => regexp.test(element));
+  }
+
+  keyPressedLength() {
+    return Object.keys(this.keysPressed).length;
   }
 
   initKeyboardLayout() {
@@ -941,16 +963,3 @@ class VirtualKeyboard {
 
 const rootNode = document.querySelector('#App');
 new VirtualKeyboard(rootNode);
-// window.addEventListener('DOMContentLoaded', () => {
-//   new VirtualKeyboard();
-// });
-
-//TODO:
-// "husky": {
-//   "hooks": {
-//     "pre-commit": "lint-staged"
-//   }
-// },
-// "lint-staged": {
-//   "*.(js)": ["npm run lint:write", "git add"]
-// },
